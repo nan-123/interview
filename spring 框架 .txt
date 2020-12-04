@@ -1,0 +1,35 @@
+spring 框架 
+知乎总结1：
+1：spring是什么
+ spring是一个轻量级的ioc和aop容器框架，是为java应用程序提供基础性服务的一套框架
+ 目的是简化企业应用程序的开发，开发者只需要关心业务需求，常见配置三种：
+ 基于xml配置，注解，java
+2：模块组成
+ spring xxx 
+        core ：核心库类，ioc
+		context 框架式的bean访问
+		aop：aop服务
+		dao：jdbc处理
+		web：面向web综合特性
+		mvc：
+		orm：对现有orm框架支持
+2：优点：
+ 低侵入
+ 低耦合
+ 提供aop技术。支持安全，事务，日志，权限等进行集中式管理
+ 对主流应用框架的支持
+aop：
+  oop面向对象，不适合用于定义横向关系，导致大量代码重复不利于各个模块的复用
+  aop：称为面向切面编程，用于哪些与业务无关，但却对多个对象产生影响的公共行为逻辑
+  抽取封装成为一个可重用模块，这个模块被称为切面-Aspect
+  减少系统中重复的代码，减低模块耦合，同时提高了可维护性，认证，日志，事务
+ 实现：
+  代理，动态代理
+   jdk，cglib
+   jdk：spring检查目标代理类有接口，使用jdk，没有则使用cglib
+   核心InvocationHandler接口和Proxy类，InvocationHandler 通过invoke()方法反射来调用目标类中的代码，
+   动态地将横切逻辑和业务编织在一起；接着，Proxy利用 InvocationHandler动态创建一个符合某一接口的的实例,  
+   生成目标类的代理对象。
+
+ioc：
+ 
