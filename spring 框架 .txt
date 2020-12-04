@@ -32,4 +32,31 @@ aop：
    生成目标类的代理对象。
 
 ioc：
+ 控制反转，是创建对象的控制权的转移，以前创建对象的时机是由自己把控，现在把这种权力转移到spring容器中
+ 并由容器根据配置去创建实例和管理各个实例之间的依赖关系，对象与对象之间松耦合，利于复用
+ di：也是控制反转的不同表达，运行时依赖ioc容器动态注入
  
+ 最直接的表达：不用new spring自动产生，反射，根据配置运行时动态创建和管理对象，并且调用对象方法
+ 
+ 三种注入：构造器，setter，注解
+  ioc：让组件解耦，aop：公共功能抽离成复用组件
+ BeanFactory和ApplicationContext：
+  spring的两大核心接口，applicationContext是beanFactory的子接口
+ BeanFactory：
+  是spring里面最底层的接口，包含了各种bean的定义，读取bean配置文档，管理bean加载，实例化，控制bean的生命周期，维护bean自己的依赖
+  ApplicationContext接口是beanFactory的派生，除了beanFatory所有功能外，还能：
+   继承MessageSource，因此支持国际化
+   统一的资源文件访问方式-读取配置
+   提供bean事件
+   加载多个配置文件
+   载入多个有上下文，比如web层
+  BeanFactroy采用的是延迟加载形式来注入Bean的
+  ApplicationContext，它是在容器启动时，一次性创建了所有的Bean。这样，在容器启动时，我们就可以发现Spring中存在的配置错误，这样有利于检查所依赖属性是否注入
+  相对于基本的BeanFactory ApplicationContext 唯一的不足是占用内存空间。
+   当应用程序配置Bean较多时，程序启动较慢。
+ BeanFactory通常以编程的方式被创建，ApplicationContext还能以声明的方式创建，如使用ContextLoader。
+ 
+ spring的生命周期：
+  servlet的生命周期：实例化-初始化init 接受请求 销毁destroy
+  bean：
+   
