@@ -73,4 +73,35 @@ CMS收集器的优点：并发收集、低停顿，但远没有达到完美；
 1、内存堆：栈是个特殊的存储区，主要功能是暂时存放数据和地址，用来保护断点和现场。
 
 2、栈：只能在一端进行插入和删除操作的特殊线性表。按照先进后出的原则存储数据，先进入的数据被压入栈底，最后的数据在栈顶，需要读数据的时候从栈顶开始弹出数据。
- 
+
+kafka和rabbitmq
+ 实时性
+ Kafka短轮询，实时性取决轮询间隔时间
+ RocketMQ长轮询，消息投递延时通常在几毫秒
+ 失败重试
+  Kafka消费失败不支持重试
+ RocketMQ消费失败支持定时重试，每次重试间隔时间顺延
+ 消息顺序
+ Kafka消息顺序，broker宕机，产生消息乱序
+ RocketMQ消息顺序，broker宕机，不会乱序
+ 定时消息
+ Kafka不支持
+ RocketMQ支持，指定毫秒级别的延时时间
+ 分布式式事物
+ Kafka不支持
+ RocketMQ支持
+ 消息查询
+ Kafka不支持
+ RocketMQ支持根据message id和消息内容查询
+ 消息回溯
+ Kafka理论支持
+ RocketMQ按照时间支持，精确到毫秒
+ 消费并行度
+ Kafka消费并行度与分区数一致
+ RocketMQ顺序消费和Kafka一样，乱序取决consumer的线程数
+ 消息轨迹
+ Kafka不支持
+ RocketMQ支持
+ broker消息过滤
+ Kafka不支持
+ RocketMQ根据message tag或者任意形式过滤
