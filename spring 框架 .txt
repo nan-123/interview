@@ -126,6 +126,30 @@ ioc：
      通知实现了 ApplicationListener 的 ServiceBean 类进行回调 onApplicationEvent 事件方法，
      Dubbo 会在这个方法中调用 ServiceBean 父类 ServiceConfig 的 export 方法，
      而该方法真正实现了服务的（异步或者非异步）发布。
+     、Dubbo是什么？
+
+     Dubbo是阿里巴巴开源的基于 Java 的高性能 RPC 分布式服务框架，现已成为 Apache 基金会孵化项目。
+     https://www.zhihu.com/search?q=dubbo%E9%9D%A2%E8%AF%95%E9%A2%98&utm_content=search_suggestion&type=content
+     为什么要用Dubbo？因为是阿里开源项目，国内很多互联网公司都在用，已经经过很多线上考验。内部使用了 Netty、Zookeeper，保证了高性能高可用性。使用 Dubbo 可以将核心业务抽取出来，作为独立的服务，逐渐形成稳定的服务中心，可用于提高业务复用灵活扩展，使前端应用能更快速的响应多变的市场需求。
+
+     dubbo:service     | 服务配置
+      dubbo:reference   | 引用配置
+       dubbo:protocol    | 协议配置
+       dubbo:application  | 应用配置
+       dubbo:module          | 模块配置
+        dubbo:registry    | 注册中心配置
+         dubbo:monitor  | 监控中心配置
+          dubbo:provider    | 提供方配置
+          dubbo:consumer    | 消费方配置
+           dubbo:method     | 方法配置
+            dubbo:argument    | 参数配置
+
+            Failover Cluster  | 失败自动切换，自动重试其它服务器（默认）
+             Failfast Cluster  | 快速失败，立即报错，只发起一次调用
+              Failsafe Cluster  | 失败安全，出现异常时，直接忽略
+               Failback Cluster  | 失败自动恢复，记录失败请求，定时重发
+                Forking Cluster   | 并行调用多个服务器，只要一个成功即返回
+                Broadcast Cluster | 广播逐个调用所有提供者，任意一个报错则报错
 
      kafka：
       https://zhuanlan.zhihu.com/p/73475227
