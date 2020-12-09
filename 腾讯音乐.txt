@@ -234,3 +234,18 @@ http2.0比1.1改进了哪些
 
          return solution(stageNum - 1) + solution(stageNum - 2);
      }
+
+分布式事务六种解决方案
+ 严格意义上的事务实现应该是具备原子性、一致性、隔离性和持久性，简称 ACID。
+ 2PC、3PC、TCC、本地消息表、消息事务、最大努力通知
+
+ 二轮没答上来的问题：
+  kafka高性能配置-消费者确认配置
+  分布式事务方案
+  hashmap跟treemap
+  jvm
+
+一些不足的地方：
+ 百丽系统怎么支撑大促高并发
+ jvm
+ 
