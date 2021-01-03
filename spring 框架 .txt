@@ -65,6 +65,22 @@ ioc：
     Spring根据BeanDefinition中的信息 以及 通过BeanWrapper提供的设置属性的接口完成依赖注入
    处理Aware接口：
     ，Spring会检测该对象是否实现了xxxAware接口，并将相关的xxxAware实例注入给Bean
+
+   Bean 的生命周期概括起来就是 4 个阶段：
+
+   实例化（Instantiation）
+   属性赋值（Populate）
+   初始化（Initialization）
+   销毁（Destruction）
+
+   若 Spring 检测到 bean 实现了 Aware 接口，则会为其注入相应的依赖。
+   所以通过让bean 实现 Aware 接口，则能在 bean 中获得相应的 Spring 容器资源。
+   Spring 中提供的 Aware 接口有：BeanNameAware：注入当前
+    bean 对应 beanName；BeanClassLoaderAware：注入加载当前
+     bean 的 ClassLoader；BeanFactoryAware：注入 当前BeanFactory容器 的引用。
+
+
+
    bean的几种作用域：
     singleton
 
