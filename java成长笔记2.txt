@@ -239,8 +239,211 @@ ApplicationContext 面向开发应用
 	2 提交阶段：
 	 如果协调者收到了参与者的失败消息或者超时，直接给每个参与者发送回滚(Rollback)消息；否则，
       发送提交(Commit)消息-:必须在最后阶段释放锁资源
-	 
-   
-   
-   
-   
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 6.1.12. Mybatis 缓存
+  Mybatis 中有一级缓存，默认开启，不能关闭，sqlsession级别，第二次相同的sql查询生效，最多存1024条
+  二级缓存：mapper级别，不同的sqlssion可以用，不建议用
+ Mybatis 的一级缓存原理
+  key：MapperID+offset+limit+Sql+所有的入参  value：用户信息
+  。如果两次中间出现 commit 操作（修改、添加、删除），本 sqlsession 中的一级缓存区域全部清空，下次再去缓存中查询不到所以要从数据库查询
+ 6.1.12.2. 二级缓存原理（mapper 基本）
+ key：MapperID+offset+limit+Sql+所有的入参
+  具体使用需要配置：
+   1. Mybatis 全局配置中启用二级缓存配置
+   2. 在对应的 Mapper.xml 中配置 cache 节点
+   3. 在对应的 select 查询节点中添加 useCache=true
+  configuration --- sqlsession --- executor mybatis三巨头
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 7. 微服务
+  7.1.1. 服务注册发现  
+   服务注册就是维护一个登记簿，它管理系统内所有的服务地址
+   当新的服务启动后，它会向登记簿交待自己的地址信息。服务的依赖方直接向登记簿要 Service Provider 地址就行了
+   当下用于服务注册的工具非常多 ZooKeeper，Consul，Etcd, 还有 Netflix 家的 eureka 等
+   。服务注册有两种形式：客户端注册和第三方注册。
+  7.1.1.1. 客户端注册（zookeeper）
+  7.1.1.2. 第三方注册（独立的服务 Registrar）
+   这种方式的缺点是 Registrar 必须是一个高可用的系统
+  7.1.1.3. 客户端发现
+    客户端发现是指客户端负责查询可用服务地址，以及负载均衡的工作
+	缺点也在于多语言时的重复工作，每个语言实现相同的逻辑。
+  7.1.1.4. 服务端发现
+   服务端发现需要额外的 Router 服务，请求先打到 Router，然后 Router 负责查询服务与负载均衡
+    缺点是保证 Router 的高可用。
+eureka：注册中心，服务的注册与发现
+Ribbon：负载均衡组件
+hystrix：容断组件
+feign：远程调用组件，集成ribbon和hystrix
+zuul：网关组件，有路由和过滤器功能
+--------------------------------------------------------------------------------------------------
+11. Zookeeper
+ Zookeeper 是一个分布式协调服务，可用于服务发现，分布式锁，分布式领导选举，配置管理等
+ Zookeeper 提供了一个类似于 Linux 文件系统的树形结构
+11.1.1. Zookeeper 角色
+  11.1.1.1. Leader
+   只有一个，维护follwer和observer心跳
+   所有的写操作必须要通过 Leader 完成再由 Leader 将写操作广播给其它服务器 半数成功，提交-类2pc
+  11.1.1.2. Follower
+   多个，响应leader心跳
+   处理读请求，转发写请求给leader，投票写请求
+  11.1.1.3. Observer
+   跟follower类似，无投票权，接受客户端连接
+  11.1.1.1. ZAB 协议
+   事务编号 Zxid（事务请求计数器+ epoch）
+   epoch：代id
+   Zab 协议有两种模式-恢复模式（选主）、广播模式（同步）
+   Leader election（选举阶段-选出准 Leader）
+    只要有一个节点得到超半数节点的票数，它就可以当选准 leader
+ 11.1.1.2. 投票机制
+   每个 sever 首先给自己投票，然后用自己的选票和其他 sever 选票对比，权重大的胜出，使用权重较大的更新自身选票箱
+ 11.1.2. Zookeeper 工作原理（原子广播）
+ 11.1.3. Znode 有四种形式的目录节点
+  1. PERSISTENT：持久的节点。
+  2. EPHEMERAL：暂时的节点。
+  3. PERSISTENT_SEQUENTIAL：持久化顺序编号目录节点。
+  4. EPHEMERAL_SEQUENTIAL：暂时化顺序编号目录节点。
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  12. Kafka
+   Kafka 是一种高吞吐量、分布式、基于发布/订阅的消息系统 Scala 语言编写
+   1. broker：Kafka 服务器，负责消息存储和转发
+   2. topic：消息类别，Kafka 按照 topic 来分类消息
+   3. partition：topic 的分区，一个 topic 可以包含多个 partition，topic 消息保存在各个partition 上
+   4. offset：消息在日志中的位置，可以理解是消息在 partition 上的偏移量，也是代表该消息的唯一序号
+   5. Producer：消息生产者
+   6. Consumer：消息消费者
+   7. Consumer Group：消费者分组，每个 Consumer 必须属于一个 group
+   8. Zookeeper：保存着集群 broker、topic、partition 等 meta 数据；另外，还负责 broker 故障发现，partition leader 选举，负载均衡等功能
+ 12.1.2. Kafka 数据存储设计
+   12.1.2.1. partition 的数据文件（offset，MessageSize，data）
+   partition 中的每条 Message 包含了以下三个属性：offset，MessageSize，data，
+   其中 offset 表 示 Message 在这个 partition 中的偏移量，
+   offset 不是该 Message 在 partition 数据文件中的实际存储位置，而是逻辑上一个值
+   offset 是partition 中 Message 的 id；MessageSize 表示消息内容 data 的大小；
+   data 为 Message 的具体内容。
+ 12.1.2.2. 数据文件分段 segment（顺序读写、分段命令、二分查找）
+  partition 物理上由多个 segment 文件组成，每个 segment 大小相等，顺序读写
+  每个 segment数据文件以该段中最小的 offset 命名，文件扩展名为.log
+  用二分查找就可以定位到该 Message 在哪个 segment 数据文件中。
+ 12.1.2.3. 数据文件索引（分段索引、稀疏存储）
+  Kafka 为每个分段后的数据文件建立了索引文件，文件名与数据文件的名字是一样的只是文件扩展名为.index
+  index 文件中并没有为数据文件中的每条 Message 建立索引，而是采用了稀疏存储的方式，每隔一定字节的数据建立一条索引
+  这样避免了索引文件占用过多的空间，从而可以将索引文件保留在内存中。
+ 12.1.3. 生产者设计
+  12.1.3.1. 负载均衡（partition 会均衡分布到不同 broker 上）
+   由于消息 topic 由多个 partition 组成，且 partition 会均衡分布到不同 broker 上
+   因此，为了有效利用 broker 集群的性能，提高消息的吞吐量，
+   producer 可以通过随机或者 hash 等方式，将消息平均发送到多个 partition 上，以实现负载均衡
+ 12.1.3.2. 批量发送
+  以一次请求的方式发送了批量的消息给 broker，从而大大减少 broker 存储消息的 IO 操作次数
+  但也一定程度上影响了消息的实时性
+ 12.1.3.3. 压缩（GZIP 或 Snappy）
+  Producer 端可以通过 GZIP 或 Snappy 格式对消息集合进行压缩
+ 12.1.1.1. Consumer Group
+  同一 Consumer Group 中的多个 Consumer 实例，不同时消费同一个 partition，
+  等效于队列模式。partition 内消息是有序的，Consumer 通过 pull 方式消费消息
+  Kafka 不删除已消费的消息对于 partition，顺序读写磁盘数据
+ 消息的写入性能
+   按照顺序写入，不用寻址，性能高
+   0拷贝
+    正常流程 磁盘--缓存--app缓存--socket流--nic流，需要经历4次复制
+    kafka采用直接从页缓存直接到socket
+1-数据传输的事务定义通常有以下三种级别：
+
+（1）最多一次: 消息不会被重复发送，最多被传输一次，但也有可能一次不传输
+
+（2）最少一次: 消息不会被漏发送，最少被传输一次，但也有可能被重复传输.
+
+（3）精确的一次（Exactly once）: 不会漏传输也不会重复传输,每个消息都传输被一次而
+
+   且仅仅被传输一次，这是大家所期望的
+ 模式pull&&push
+push 模式下，当 broker 推送的速率远大于 consumer 消费的速率时，
+consumer 恐怕就要崩溃了。最终 Kafka 还是选取了传统的 pull 模式
+Pull 模式的另外一个好处是 consumer 可以自主决定是否批量的从 broker 拉取数据
+Pull 有个缺点是，如果 broker 没有可供消费的消息，将导致 consumer 不断在循环中轮询
+ 13.kafka 的 ack 机制
+  request.required.acks 有三个值 0 1 -1
+   0：不需要确认
+   1：leader确认
+   -1：所有节点确认
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  13. RabbitMQ
+   RabbitMQ 是一个由 Erlang 语言开发的 AMQP 的开源实现。
+   AMQP ：Advanced Message Queue，高级消息队列协议
+   1. 可靠性（Reliability）：RabbitMQ 使用一些机制来保证可靠性，如持久化、传输确认、发布
+      确认
+  2. 灵活的路由（Flexible Routing）：在消息进入队列之前，通过 Exchange 来路由消息的。对
+     于典型的路由功能，RabbitMQ 已经提供了一些内置的 Exchange 来实现。针对更复杂的路
+     由功能，可以将多个 Exchange 绑定在一起，也通过插件机制实现自己的 Exchange
+  3. 消息集群（Clustering）：多个 RabbitMQ 服务器可以组成一个集群，形成一个逻辑 Broker 。
+  4. 高可用（Highly Available Queues）：队列可以在集群中的机器上进行镜像，使得在部分节
+     点出问题的情况下队列仍然可用
+  5. 多种协议（Multi-protocol）：RabbitMQ 支持多种消息队列协议，比如 STOMP、MQTT 
+     等等。
+  6. 多语言客户端（Many Clients）：RabbitMQ 几乎支持所有常用语言，比如 Java、.NET、
+     Ruby 等等。
+  7. 管理界面（Management UI）
+  8. 跟踪机制（Tracing）
+  9. 插件机制（Plugin System）
+ 13.1.2.1. Message
+  消息，消息是不具名的，它由消息头和消息体组成。
+   消息体是不透明的，而消息头则由一系列的可选属性组成，这些属性包括 routing-key（路由键）、priority（
+ 13.1.2.2. Publisher
+   1. 消息的生产者，也是一个向交换器发布消息的客户端应用程序。
+ 13.1.2.3. Exchange（将消息路由给队列 ）
+   2. 交换器，用来接收生产者发送的消息并将这些消息路由给服务器中的队列。
+ 13.1.2.4. Binding（消息队列和交换器之间的关联）
+ 13.1.2.5. Queue 它是消息的容器，也是消息的终点
+ 13.1.2.6. Connection  网络连接，比如一个 TCP 连接。
+ 13.1.2.7. Channel
+  信道，多路复用连接中的一条独立的双向数据流通道
+ 13.1.2.8. Consumer
+ 13.1.2.9. Virtual Host 虚拟主机，表示一批交换器、消息队列和相关对象
+ 13.1.2.10.Broker
+  表示消息队列服务器实体。
+ 13.1.3. Exchange 类型
+  目前共四种类型：direct、fanout、topic、headers
+  
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ afka和rabbitmq
+ 实时性
+ Kafka短轮询，实时性取决轮询间隔时间
+ RocketMQ长轮询，消息投递延时通常在几毫秒
+ 失败重试
+  Kafka消费失败不支持重试
+ RocketMQ消费失败支持定时重试，每次重试间隔时间顺延
+ 消息顺序
+ Kafka消息顺序，broker宕机，产生消息乱序
+ RocketMQ消息顺序，broker宕机，不会乱序
+ 定时消息
+ Kafka不支持
+ RocketMQ支持，指定毫秒级别的延时时间
+ 分布式式事物
+ Kafka不支持
+ RocketMQ支持
+ 消息查询
+ Kafka不支持
+ RocketMQ支持根据message id和消息内容查询
+ 消息回溯
+ Kafka理论支持
+ RocketMQ按照时间支持，精确到毫秒
+ 消费并行度
+ Kafka消费并行度与分区数一致
+ RocketMQ顺序消费和Kafka一样，乱序取决consumer的线程数
+ 消息轨迹
+ Kafka不支持
+ RocketMQ支持
+ broker消息过滤
+ Kafka不支持
+ RocketMQ根据message tag或者任意形式过滤
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
