@@ -1,0 +1,133 @@
+8. Netty 与 RPC
+  Netty 是一个高性能、异步事件驱动的 NIO 框架，基于 JAVA NIO 提供的 API 实现
+  它提供了对TCP、UDP 和文件传输的支持，作为一个异步 NIO 框架，Netty 的所有 IO 操作都是异步非阻塞
+  的，通过 Future-Listener 机制，用户可以方便的主动获取或者通过通知机制获得 IO 操作结果。
+  
+ 8.1.2. Netty 高性能
+  1 多线程或者 IO 多路复用技术
+    1.1 IO 多路复用技术通过把多个 IO 的阻塞复用到同一个 select 的阻塞上，从而使得系统在单线程的情况下可以同时处理多个客户端请求I/O 多路复用的
+    1.2 最大优势是系统开销小，系统不需要创建新的额外进程或者线程，也不需要维护这些进程和线程的运行
+	1.3  跟Socket 类和 ServerSocket 类相对应，NIO 也提供了 SocketChannel 和 ServerSocketChannel
+          两种不同的套接字通道实现。
+8.1.2.1. 多路复用通讯方式
+  Netty 架构按照 Reactor 模式设计和实现
+  服务端：
+  1：打开ServerSocketChannel
+  2：绑定监听地址
+  3：创建selector，启动线程
+  4：将ServerSocketChannel注册到selector，监听
+  5：selector轮询就绪key
+  6：handleAccept处理新的客户端接入
+  7：设置新建客户端连接socket
+  8：向selctor注册监听读操作
+  9：handlerread 异步读请求消息到bytebuffer
+  10：decode请求
+  11：异步写bytebuffer到 SocketChannel
+  三个重要组件 nioserver-reactor thread-lohandler
+  客户端：
+  1：打开SocketChannel
+  2：设置SocketChannel为非阻塞，tcp参数
+  3：异步连接服务器
+  4：判断接收结果
+  5：向Reactor线程的多路复用器注册op connect事件
+  6：创建selector，启动线程
+  7：selector轮询就绪的key
+  8：handerconnect()
+  9:判断连接，完成，执行10
+  10：向多路复用器注册读事件：op_read
+  11:
+ Netty 的 IO 线程 NioEventLoop 由于聚合了多路复用器 Selector，
+  可以同时并发处理成百上千个客户端 Channel
+	
+  8.1.2.1. 异步通讯 NIO
+	 由于 Netty 采用了异步通信模式，一个 IO 线程可以并发处理 N 个客户端连接和读写操作
+  8.1.2.2. 零拷贝（DIRECT BUFFERS 使用堆外直接内存）	  
+  8.1.2.3. 内存池（基于内存池的缓冲区重用机制）	  
+	 Netty 提供了基于内存池的缓冲区重用机制	  
+  8.1.2.4. 高效的 Reactor 线程模型
+   常用的 Reactor 线程模型有三种，Reactor 单线程模型, Reactor 多线程模型, 主从 Reactor 多线程模型
+ 8.1.2.5. 无锁设计、线程绑定
+ 8.1.2.6. 高性能的序列化框架
+		 Netty 默认提供了对 Google Protobuf 的支持  
+8.1.3. Netty RPC 实现
+  1. 服务发布与订阅：服务端使用 Zookeeper 注册服务地址，客户端从 Zookeeper 获取可用的服务
+     地址。
+  2. 通信：使用 Netty 作为通信框架。
+  3. Spring：使用 Spring 配置服务，加载 Bean，扫描注解。
+  4. 动态代理：客户端使用代理模式透明化服务调用。
+  5. 消息编解码：使用 Protostuff 序列化和反序列化消息。
+ 8.1.3.3. 核心流程
+  1. 服务消费方（client）调用以本地调用方式调用服务；
+  2. client stub 接收到调用后负责将方法、参数等组装成能够进行网络传输的消息体；
+  3. client stub 找到服务地址，并将消息发送到服务端；
+  4. server stub 收到消息后进行解码；
+  5. server stub 根据解码结果调用本地的服务；
+  6. 本地服务执行并将结果返回给 server stub；
+  7. server stub 将返回结果打包成消息并发送至消费方；
+  8. client stub 接收到消息，并进行解码；
+  9. 服务消费方得到最终结果
+ 8.1.3.1. 消息编解码
+  息数据结构（接口名称+方法名+参数类型和参数值+超时时间+ requestID）
+ 序列化
+  目前互联网公司广泛使用 Protobuf、Thrift、Avro 等成熟的序列化解决方案来搭建 RPC 框架，这
+  些都是久经考验的解决方案。
+ 8.1.3.1. 通讯过程
+  核心问题(线程暂停、消息乱序)
+  1 requestID 生成-AtomicLong 生成一个唯一的 ID
+  2 存放回调对象 callback 到全局 ConcurrentHashMap
+  3 synchronized 获取回调对象 callback 的锁并自旋 wait
+     再先检测是否已经获取到结果，如果没有，然后调用 callback 的 wait()方法，释放
+     callback 上的锁，让当前线程处于等待状态
+  4 监听消息的线程收到消息，找到 callback 上的锁并唤醒
+     取到requestID ，再从前面的 ConcurrentHashMap 里 面 get(requestID) ，从而找到
+     callback 对象，再用 synchronized 获取 callback 上的锁，将方法调用结果设置到
+     callback 对象里，再调用 callback.notifyAll()唤醒前面处于等待状态的线程。
+ 8.1.4. RMI 实现方式
+  Java 远程方法调用，即 Java RMI（Java Remote Method Invocation）是 Java 编程语言里，一种用于实现远程过程调用的应用程序编程接口
+ 8.1.4.1. 实现步骤
+  1. 编写远程服务接口，该接口必须继承 java.rmi.Remote 接口，方法必须抛出
+     java.rmi.RemoteException 异常；
+  2. 编写远程接口实现类，该实现类必须继承 java.rmi.server.UnicastRemoteObject 类；
+  3. 运行 RMI 编译器（rmic），创建客户端 stub 类和服务端 skeleton 类;
+  4. 启动一个 RMI 注册表，以便驻留这些服务;
+  5. 在 RMI 注册表中注册服务；
+  6. 客户端查找远程对象，并调用远程方法；
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+9. 网络
+   
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
