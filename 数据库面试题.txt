@@ -21,6 +21,10 @@
   7：使用索引
    索引应该建在用于join，where，order by的字段上
   8：尽量不使用like %，会使索引失效，可以用 name>="MYSQL" and name < "MYSQM"
+  数据库命中原则：
+  1、先在where解析这一步把当前的查询语句中的查询条件分解成每一个独立的条件单元
+  2、mysql会自动将sql拆分重组
+  3、然后where条件会在B-tree index这部分进行索引匹配，如果命中索引，就会定位到指定的table records位置。如果没有命中，则只能采用全部扫描的方式
 四：如何看执行计划
  explain+你要执行的sql语句
  会得到：id select_type table ..
